@@ -2,19 +2,7 @@ import pandas as pd
 import numpy as np
 import json
 import os
-
-# Tắt cảnh báo của pandas một cách an toàn
-pd.options.mode.chained_assignment = None  # default='warn'
-
-# Thử import graphviz, nếu không có sẽ báo lỗi thân thiện
-try:
-    from graphviz import Digraph
-except ImportError:
-    print("Thư viện 'graphviz' chưa được cài đặt.")
-    print("Vui lòng chạy: pip install graphviz")
-    print("Đồng thời, hãy đảm bảo bạn đã cài đặt phần mềm Graphviz trên hệ điều hành của mình.")
-    print("Xem hướng dẫn tại: https://graphviz.org/download/")
-    exit()
+from graphviz import Digraph
 
 # =============================================================================
 # CLASS ĐỊNH NGHĨA THUẬT TOÁN ID3
@@ -88,7 +76,7 @@ class ID3DecisionTree:
     def predict(self, X):
         return [self._predict_single(x, self.tree) for _, x in X.iterrows()]
 
-    # --- PHƯƠNG THỨC MỚI ĐỂ VẼ CÂY ---
+    # --- PHƯƠNG THỨC ĐỂ VẼ CÂY ---
     def _visualize_recursive(self, dot, node, parent_id=None, edge_label=""):
         node_id = str(id(node))
         if 'leaf_value' in node:
@@ -100,7 +88,7 @@ class ID3DecisionTree:
             dot.node(node_id, label, shape='ellipse', style='filled', fillcolor='lightblue')
             for value, child_node in node['children'].items():
                 self._visualize_recursive(dot, child_node, node_id, edge_label=str(value))
-        
+
         if parent_id:
             dot.edge(parent_id, node_id, label=edge_label)
 
@@ -109,7 +97,7 @@ class ID3DecisionTree:
             print("Mô hình chưa được huấn luyện. Vui lòng gọi fit() trước.")
             return
         dot = Digraph(comment='ID3 Decision Tree')
-        dot.attr(rankdir='TB', size='8,8')
+        dot.attr(rankdir='TB', size='15,15') # Tăng kích thước ảnh để dễ nhìn hơn
         self._visualize_recursive(dot, self.tree)
         # Lưu file ảnh và file nguồn DOT
         dot.render(filename, format='png', view=False, cleanup=True)
@@ -125,7 +113,6 @@ class CARTDecisionTree:
         self.max_depth = max_depth
         self.tree = None
 
-    # (Các phương thức tính toán và xây dựng cây)
     def _calculate_gini(self, y):
         if len(y) == 0: return 0
         _, counts = np.unique(y, return_counts=True)
@@ -153,10 +140,10 @@ class CARTDecisionTree:
             return {'leaf_value': y.mode()[0] if not y.empty else None}
         best_split = self._find_best_split(X, y)
         if not best_split: return {'leaf_value': y.mode()[0]}
-        
+
         feature, value = best_split['feature'], best_split['value']
         left_idx, right_idx = X[feature] == value, X[feature] != value
-        
+
         tree = {
             'feature': feature, 'value': value,
             'left': self._build_tree(X[left_idx], y[left_idx], depth + 1),
@@ -167,7 +154,6 @@ class CARTDecisionTree:
     def fit(self, X, y):
         self.tree = self._build_tree(X, y)
 
-    # (Phương thức predict)
     def _predict_single(self, x, tree):
         if 'leaf_value' in tree: return tree['leaf_value']
         if x[tree['feature']] == tree['value']:
@@ -178,7 +164,6 @@ class CARTDecisionTree:
     def predict(self, X):
         return [self._predict_single(x, self.tree) for _, x in X.iterrows()]
 
-    # --- PHƯƠNG THỨC ĐỂ VẼ CÂY ---
     def _visualize_recursive(self, dot, node, parent_id=None, edge_label=""):
         node_id = str(id(node))
         if 'leaf_value' in node:
@@ -199,7 +184,7 @@ class CARTDecisionTree:
             print("Mô hình chưa được huấn luyện. Vui lòng gọi fit() trước.")
             return
         dot = Digraph(comment='CART Decision Tree')
-        dot.attr(rankdir='TB', size='8,8')
+        dot.attr(rankdir='TB', size='15,15')
         self._visualize_recursive(dot, self.tree)
         dot.render(filename, format='png', view=False, cleanup=True)
         print(f"Hình ảnh cây quyết định CART đã được lưu vào file: {filename}.png")
@@ -208,19 +193,28 @@ class CARTDecisionTree:
 # =============================================================================
 # CHƯƠNG TRÌNH CHÍNH
 # =============================================================================
-
 # --- BƯỚC 1: CHUẨN BỊ DỮ LIỆU ---
-print("### BƯỚC 1: CHUẨN BỊ DỮ LIỆU ###")
+print("### BƯỚC 1: CHUẨN BỊ DỮ LIỆU (ĐÃ MỞ RỘNG) ###")
+
 data = {
-    'Age': [41, 49, 37, 33, 27, 32, 28, 30, 38, 36, 29, 45, 35, 26, 50],
-    'Attrition': ['Yes', 'No', 'Yes', 'No', 'No', 'No', 'Yes', 'No', 'No', 'No', 'Yes', 'No', 'Yes', 'Yes', 'No'],
-    'Department': ['Sales', 'R&D', 'R&D', 'R&D', 'R&D', 'R&D', 'Sales', 'R&D', 'R&D', 'Sales', 'R&D', 'Sales', 'R&D', 'R&D', 'Sales'],
-    'JobSatisfaction': [4, 2, 3, 3, 2, 4, 1, 3, 3, 3, 1, 4, 2, 1, 3],
-    'MaritalStatus': ['Single', 'Married', 'Single', 'Married', 'Married', 'Single', 'Single', 'Divorced', 'Single',
-                       'Married', 'Single', 'Married', 'Single', 'Single', 'Divorced'],
-    'OverTime': ['Yes', 'No', 'Yes', 'No', 'No', 'No', 'Yes', 'No', 'No', 'No', 'Yes', 'No', 'Yes', 'Yes', 'No'],
-    'WorkLifeBalance': [1, 3, 3, 3, 3, 2, 2, 3, 3, 2, 1, 3, 2, 1, 3]
+    'Age': [41, 49, 37, 33, 27, 32, 28, 30, 38, 36, 29, 45, 35, 26, 50,
+            22, 58, 42, 39, 31, 46, 25, 51, 34, 29, 44, 28, 33, 40, 55],
+    'Attrition': ['Yes', 'No', 'Yes', 'No', 'No', 'No', 'Yes', 'No', 'No', 'No', 'Yes', 'No', 'Yes', 'Yes', 'No',
+                  'Yes', 'No', 'No', 'No', 'Yes', 'No', 'Yes', 'No', 'Yes', 'No', 'No', 'Yes', 'No', 'Yes', 'No'],
+    'Department': ['Sales', 'R&D', 'R&D', 'R&D', 'R&D', 'R&D', 'Sales', 'R&D', 'R&D', 'Sales', 'R&D', 'Sales', 'R&D', 'R&D', 'Sales',
+                   'R&D', 'R&D', 'Sales', 'R&D', 'Sales', 'Sales', 'R&D', 'Sales', 'R&D', 'Sales', 'R&D', 'Sales', 'Sales', 'R&D', 'R&D'],
+    'JobSatisfaction': [4, 2, 3, 3, 2, 4, 1, 3, 3, 3, 1, 4, 2, 1, 3,
+                        1, 4, 2, 3, 2, 3, 1, 4, 2, 3, 3, 1, 2, 1, 4],
+    'MaritalStatus': ['Single', 'Married', 'Single', 'Married', 'Married', 'Single', 'Single', 'Divorced', 'Single', 'Married', 'Single', 'Married', 
+                      'Single', 'Single', 'Divorced','Single', 'Married', 'Married', 'Single', 'Divorced', 'Married', 'Single', 'Married', 'Single', 
+                      'Married', 'Divorced', 'Single', 'Married', 'Single', 'Married'],
+    'OverTime': ['Yes', 'No', 'Yes', 'No', 'No', 'No', 'Yes', 'No', 'No', 'No', 'Yes', 'No', 'Yes', 'Yes', 'No',
+                 'Yes', 'No', 'No', 'Yes', 'Yes', 'No', 'Yes', 'No', 'Yes', 'No', 'No', 'Yes', 'Yes', 'Yes', 'No'],
+    'WorkLifeBalance': [1, 3, 3, 3, 3, 2, 2, 3, 3, 2, 1, 3, 2, 1, 3,
+                        2, 3, 3, 1, 2, 4, 1, 4, 2, 3, 3, 1, 2, 1, 4]
 }
+
+
 df = pd.DataFrame(data)
 df['AgeGroup'] = pd.cut(df['Age'], bins=[0, 30, 40, 50, 100], labels=['<=30', '31-40', '41-50', '51+'])
 satisfaction_map = {1: 'Low', 2: 'Medium', 3: 'High', 4: 'Very High'}
@@ -234,15 +228,15 @@ y = df[target]
 
 # --- BƯỚC 2: MÔ HÌNH ID3 VÀ TRỰC QUAN HÓA ---
 print("\n### BƯỚC 2: MÔ HÌNH ID3 ###")
-id3_tree = ID3DecisionTree(min_samples_split=2, max_depth=4)
+id3_tree = ID3DecisionTree(min_samples_split=1, max_depth=10)
 id3_tree.fit(X, y)
-id3_tree.visualize('id3_attrition_tree') # Tạo file id3_attrition_tree.png
+id3_tree.visualize('id3_attrition_tree_expanded')
 
 # --- BƯỚC 3: MÔ HÌNH CART VÀ TRỰC QUAN HÓA ---
 print("\n### BƯỚC 3: MÔ HÌNH CART ###")
-cart_tree = CARTDecisionTree(min_samples_split=2, max_depth=4)
+cart_tree = CARTDecisionTree(min_samples_split=1, max_depth=10)
 cart_tree.fit(X, y)
-cart_tree.visualize('cart_attrition_tree') # Tạo file cart_attrition_tree.png
+cart_tree.visualize('cart_attrition_tree_expanded')
 
 # --- BƯỚC 4: DỰ ĐOÁN ---
 print("\n### BƯỚC 4: DỰ ĐOÁN TRÊN DỮ LIỆU MỚI ###")
