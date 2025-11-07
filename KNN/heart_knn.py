@@ -9,7 +9,7 @@ def Data(path):
     label_encoders = {}
     # Đọc file CSV với dấu chấm phẩy là dấu phân cách
     with open(path, "r") as f:
-        data = list(csv.reader(f, delimiter=';'))
+        data = list(csv.reader(f, delimiter=','))
     # Lấy tên các cột
     headers = data[0]
     # Xóa phần header khỏi dữ liệu
@@ -30,20 +30,19 @@ def Data(path):
     # Chuyển tất cả giá trị thành số thực
     data = data.astype(float)
     # Xáo trộn và tách tập huấn luyện và tập kiểm tra (80% huấn luyện, 20% kiểm tra)
-    np.random.shuffle(data)
+    # np.random.shuffle(data)
     split_idx = int(len(data) * 0.8)
     trainSet = data[:split_idx]
     testSet = data[split_idx:]
     return trainSet, testSet, headers
-
-k = [4, 5, 6, 6, 7, 8, 2, 2, 3, 9, 2, 2, 4, 5, 6, 6, 7, 8, 2, 2, 3, 9, 2, 2, 4, 5, 6, 6, 7, 8, 2, 2, 3, 9, 2, 2]
+k = [9, 1, 3, 8, 8, 1, 1, 9, 1, 2, 1, 1]
 # Hàm tính khoảng cách Euclidean
 def calcDists(x1, x2):
     distance = 0
     # Sử dụng tất cả đặc trưng trừ cái cuối cùng (biến mục tiêu G3)
     for i in range(len(x1)-1):
-        # distance += (float(x1[i]) - float(x2[i])) ** 2
         distance += k[i] * (float(x1[i]) - float(x2[i])) ** 2
+        # distance += (float(x1[i]) - float(x2[i])) ** 2
     return math.sqrt(distance)
 
 # Hàm tìm k láng giềng gần nhất
@@ -75,7 +74,7 @@ if __name__ == "__main__":
     # Lấy thư mục chứa script
     current_dir = os.path.dirname(os.path.abspath(__file__))
     # Tạo đường dẫn đầy đủ đến file CSV
-    csv_path = os.path.join(current_dir, "student-mat.csv")
+    csv_path = os.path.join(current_dir, "heart.csv")
     
     # Tải và tiền xử lý dữ liệu
     trainSet, testSet, headers = Data(csv_path)
@@ -85,18 +84,18 @@ if __name__ == "__main__":
     total_error = 0
     
     for item in testSet:
-        knn = KNN(trainSet, item, k=10)  # Using k=10 neighbors
+        knn = KNN(trainSet, item, 25)  # Using k=10 neighbors
         predicted_grade, most_common  = mostCommon(knn)
         actual_grade = item[-1]
         error = abs(predicted_grade - actual_grade)
         total_error += error
         
         # Coi dự đoán là đúng nếu sai số trong khoảng 2 điểm
-        numOfRightAnswer += (error <= 2)
+        numOfRightAnswer += (error <= 0)
         
         print(f"Actual Grade: {actual_grade:.0f} -> Predicted: {predicted_grade:.0f} (Error: {error:.0f}, Number of labels: {most_common}) ")
     
     accuracy = numOfRightAnswer / len(testSet)
     mean_error = total_error / len(testSet)
-    print(f"\nAccuracy (within 2 grade points): {accuracy:.2%}")
+    print(f"\nAccuracy: {accuracy:.2%}")
     print(f"Mean Absolute Error: {mean_error:.2f} grade points")
