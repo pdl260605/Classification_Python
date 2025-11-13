@@ -41,8 +41,8 @@ def calcDists(x1, x2):
     distance = 0
     # Sử dụng tất cả đặc trưng trừ cái cuối cùng (biến mục tiêu G3)
     for i in range(len(x1)-1):
-        distance += k[i] * (float(x1[i]) - float(x2[i])) ** 2
-        # distance += (float(x1[i]) - float(x2[i])) ** 2
+        # distance += k[i] * (float(x1[i]) - float(x2[i])) ** 2
+        distance += (float(x1[i]) - float(x2[i])) ** 2
     return math.sqrt(distance)
 
 # Hàm tìm k láng giềng gần nhất
@@ -98,4 +98,3 @@ if __name__ == "__main__":
     accuracy = numOfRightAnswer / len(testSet)
     mean_error = total_error / len(testSet)
     print(f"\nAccuracy: {accuracy:.2%}")
-    print(f"Mean Absolute Error: {mean_error:.2f} grade points")
