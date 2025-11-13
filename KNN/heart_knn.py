@@ -30,7 +30,7 @@ def Data(path):
     # Chuyển tất cả giá trị thành số thực
     data = data.astype(float)
     # Xáo trộn và tách tập huấn luyện và tập kiểm tra (80% huấn luyện, 20% kiểm tra)
-    # np.random.shuffle(data)
+    np.random.shuffle(data)
     split_idx = int(len(data) * 0.8)
     trainSet = data[:split_idx]
     testSet = data[split_idx:]
